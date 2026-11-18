@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<yml_catalog date="2026-11-18T13:25:00+03:00">
+  <shop>
+    <name>ТДПВ — Промышленная вентиляция</name>
+    <company>ООО «ТДПВ»</company>
+    <url>https://tdpv.ru/</url>
+    <currencies>
+      <currency id="RUR" rate="1"/>
+    </currencies>
+    <categories>
+      <category id="101">Воздушные завесы</category>
+      <category id="102">Преобразователи частоты</category>
+      <category id="103">Канальные вентиляторы</category>
+    </categories>
+    <offers>
+      <offer id="4501" available="true">
+        <url>https://tdpv.ru/catalog/zavesy/teplomash-kev-6p2211e/</url>
+        <price>28490.00</price>
+        <oldprice>32900.00</oldprice>
+        <currencyId>RUR</currencyId>
+        <categoryId>101</categoryId>
+        <picture>https://tdpv.ru/upload/iblock/kev-6p2211e.jpg</picture>
+        <name>Воздушная завеса Тепломаш КЭВ-6П2211Е</name>
+        <vendor>Тепломаш</vendor>
+        <vendorCode>КЭВ-6П2211Е</vendorCode>
+        <description>Электрическая воздушно-тепловая завеса Тепломаш КЭВ-6П2211Е для защиты дверных проемов высотой до 2,5 метров от проникновения холодного воздуха.</description>
+        <param name="Напряжение" unit="В">220</param>
+        <param name="Мощность" unit="кВт">6</param>
+        <param name="Производительность" unit="м³/ч">1100</param>
+        <param name="Вес" unit="кг">14.5</param>
+      </offer>
+      <offer id="4502" available="true">
+        <url>https://tdpv.ru/catalog/chastotniki/esq-a200-021-1-5k/</url>
+        <price>16200.00</price>
+        <currencyId>RUR</currencyId>
+        <categoryId>102</categoryId>
+        <picture>https://tdpv.ru/upload/iblock/esq-a200-15k.jpg</picture>
+        <name>Преобразователь частоты ESQ-A200-021-1.5K</name>
+        <vendor>ESQ</vendor>
+        <vendorCode>ESQ-A200-021-1.5K</vendorCode>
+        <description>Компактный частотный преобразователь ESQ-A200-021-1.5K для управления скоростью вращения асинхронных электродвигателей промышленных вентиляторов и насосов.</description>
+        <param name="Напряжение" unit="В">220</param>
+        <param name="Мощность" unit="кВт">1.5</param>
+        <param name="Вес" unit="кг">1.8</param>
+      </offer>
+      <offer id="4503" available="true">
+        <url>https://tdpv.ru/catalog/ventilyatory/systemair-k-200-xl/</url>
+        <price>24750.00</price>
+        <currencyId>RUR</currencyId>
+        <categoryId>103</categoryId>
+        <picture>https://tdpv.ru/upload/iblock/systemair-k200xl.jpg</picture>
+        <name>Канальный вентилятор Systemair K 200 XL</name>
+        <vendor>Systemair</vendor>
+        <vendorCode>1249</vendorCode>
+        <description>Круглый канальный вентилятор Systemair K 200 XL с загнутыми назад лопатками рабочего колеса для приточно-вытяжных систем вентиляции коммерческих зданий.</description>
+        <param name="Напряжение" unit="В">230</param>
+        <param name="Мощность" unit="кВт">0.165</param>
+        <param name="Производительность" unit="м³/ч">1026</param>
+        <param name="Вес" unit="кг">4.6</param>
+      </offer>
+    </offers>
+  </shop>
+</yml_catalog>

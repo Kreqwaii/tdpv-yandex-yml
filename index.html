@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Автовыгрузка Яндекс Товары (YML) + Отчёт контроля качества для tdpv.ru (1С-Битрикс)</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230284C7'/%3E%3Cpath d='M7 10h18M7 16h12M7 22h15' stroke='%23FFFFFF' stroke-width='2.5' stroke-linecap='round'/%3E%3Ccircle cx='24' cy='22' r='3' fill='%2316A34A'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <header class="app-header">
+    <div class="container header-inner">
+      <div class="header-title-block">
+        <div class="header-eyebrow">
+          <span class="badge badge-info">1С-Битрикс · PHP 8.x</span>
+          <span class="badge badge-neutral">YML / Яндекс Товары</span>
+        </div>
+        <h1>Автовыгрузка Яндекс Товары (YML) + Отчёт контроля качества для tdpv.ru</h1>
+        <p class="header-subtitle">Интерактивный стенд проверки правил фильтрации каталога, формирования YML-фида (UTF-8 без BOM) и диагностики исключённых позиций</p>
+      </div>
+      <div class="header-actions">
+        <a href="./bitrix/yandex_tovary_export.php" class="btn btn-secondary" download>
+          PHP-скрипт для 1С-Битрикс
+        </a>
+        <a href="./feeds/yandex-tovary.xml" class="btn btn-primary" target="_blank" rel="noopener">
+          Пример yandex-tovary.xml
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container main-content">
+    <section class="kpi-grid" aria-label="Сводные показатели выгрузки">
+      <div class="kpi-card">
+        <div class="kpi-label">Проверено товаров</div>
+        <div class="kpi-value" id="kpiChecked">0</div>
+        <div class="kpi-meta">Позиций в выборке каталога</div>
+      </div>
+      <div class="kpi-card kpi-card--valid">
+        <div class="kpi-label">Включено в YML</div>
+        <div class="kpi-value" id="kpiIncluded">0</div>
+        <div class="kpi-meta">Валидные &lt;offer&gt; с ценой &gt; 0</div>
+      </div>
+      <div class="kpi-card kpi-card--excluded">
+        <div class="kpi-label">Исключено по правилам</div>
+        <div class="kpi-value" id="kpiExcluded">0</div>
+        <div class="kpi-meta">Цена по запросу / нет цены / архив</div>
+      </div>
+      <div class="kpi-card kpi-card--warning">
+        <div class="kpi-label">Замечания (Warnings)</div>
+        <div class="kpi-value" id="kpiWarnings">0</div>
+        <div class="kpi-meta">Допущены в фид, требуют внимания</div>
+      </div>
+    </section>
+
+    <nav class="tabs-bar" role="tablist" aria-label="Разделы стенда">
+      <button type="button" class="tab-btn is-active" data-tab="cases" role="tab" aria-selected="true">
+        1. Интерактивная проверка правил ТЗ tdpv.ru
+      </button>
+      <button type="button" class="tab-btn" data-tab="excluded" role="tab" aria-selected="false">
+        2. Отчёт об исключённых товарах и замечаниях
+      </button>
+      <button type="button" class="tab-btn" data-tab="xml" role="tab" aria-selected="false">
+        3. Сгенерированный YML-фид (UTF-8 без BOM)
+      </button>
+      <button type="button" class="tab-btn" data-tab="mapping" role="tab" aria-selected="false">
+        4. Таблица маппинга 1С-Битрикс → YML и расписание
+      </button>
+    </nav>
+
+    <section id="panel-cases" class="tab-panel is-active" role="tabpanel">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div>
+            <h2>Симулятор каталога tdpv.ru</h2>
+            <p class="panel-desc">Переключайте флаг «Цена по запросу» или наличие товара в реальном времени — KPI, отчёт исключений и XML-фид пересчитываются мгновенно.</p>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Артикул</th>
+                <th>Наименование / Раздел</th>
+                <th>Цена, ₽</th>
+                <th>Наличие</th>
+                <th>Цена по запросу</th>
+                <th>Статус в YML</th>
+                <th>Действия</th>
+              </tr>
+            </thead>
+            <tbody id="catalogSimBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="panel-excluded" class="tab-panel" role="tabpanel">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div>
+            <h2>Исключённые товары (не попали в YML)</h2>
+            <p class="panel-desc">Позиции, отсеянные фильтром выгрузки согласно требованиям Яндекс Товаров и ТЗ tdpv.ru.</p>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Артикул</th>
+                <th>Название</th>
+                <th>URL карточки</th>
+                <th>Причина исключения</th>
+              </tr>
+            </thead>
+            <tbody id="excludedTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="panel-card">
+        <div class="panel-header">
+          <div>
+            <h2>Замечания контроля качества (Warnings)</h2>
+            <p class="panel-desc">Товары, включённые в YML-фид, но имеющие неполные или требующие проверки данные.</p>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Артикул</th>
+                <th>Статус в фиде</th>
+                <th>Замечание</th>
+              </tr>
+            </thead>
+            <tbody id="warningsTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="panel-xml" class="tab-panel" role="tabpanel">
+      <div class="panel-card">
+        <div class="panel-header panel-header--row">
+          <div>
+            <h2>Сгенерированный YML-фид (UTF-8 без BOM)</h2>
+            <p class="panel-desc">Актуальный XML-документ, сформированный из текущих валидных позиций каталога.</p>
+          </div>
+          <button type="button" id="btnCopyXml" class="btn btn-primary">Скопировать XML</button>
+        </div>
+        <pre class="xml-preview"><code id="xmlPreviewCode"></code></pre>
+      </div>
+    </section>
+
+    <section id="panel-mapping" class="tab-panel" role="tabpanel">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div>
+            <h2>Маппинг полей 1С-Битрикс → YML (Яндекс Товары)</h2>
+            <p class="panel-desc">Соответствие свойств инфоблока каталога и торгового каталога элементам YML-стандарта.</p>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Поле / Свойство 1С-Битрикс</th>
+                <th>Тег / Атрибут YML</th>
+                <th>Правило преобразования и валидации</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>ID</code></td>
+                <td><code>&lt;offer id="..."&gt;</code></td>
+                <td>Уникальный числовой идентификатор элемента инфоблока.</td>
+              </tr>
+              <tr>
+                <td><code>NAME</code></td>
+                <td><code>&lt;name&gt;</code></td>
+                <td>Очищенное название товара без HTML-тегов и лишних пробелов.</td>
+              </tr>
+              <tr>
+                <td><code>DETAIL_PAGE_URL</code></td>
+                <td><code>&lt;url&gt;</code></td>
+                <td>Абсолютный ЧПУ-URL карточки товара на домене <code>https://tdpv.ru</code>.</td>
+              </tr>
+              <tr>
+                <td><code>CATALOG_PRICE_1</code></td>
+                <td><code>&lt;price&gt;</code>, <code>&lt;currencyId&gt;</code></td>
+                <td>Базовая цена в <code>RUB</code>. Если <code>&lt;= 0</code> или активно «Цена по запросу» — товар исключается.</td>
+              </tr>
+              <tr>
+                <td><code>IBLOCK_SECTION_ID</code></td>
+                <td><code>&lt;categoryId&gt;</code></td>
+                <td>Привязка к дереву разделов <code>&lt;categories&gt;</code>; неактивные разделы пропускаются.</td>
+              </tr>
+              <tr>
+                <td><code>DETAIL_PICTURE</code> + <code>MORE_PHOTO</code></td>
+                <td><code>&lt;picture&gt;</code></td>
+                <td>Абсолютные URL изображений (до 10 тегов на offer); без фото товар не выгружается или получает warning.</td>
+              </tr>
+              <tr>
+                <td><code>PREVIEW_TEXT</code> / очищенный <code>DETAIL_TEXT</code></td>
+                <td><code>&lt;description&gt;</code></td>
+                <td>HTML-теги удаляются, текст обрезается до лимита YML (до 3000 символов) в CDATA.</td>
+              </tr>
+              <tr>
+                <td><code>PROPERTY_MANUFACTURER</code></td>
+                <td><code>&lt;vendor&gt;</code></td>
+                <td>Наименование производителя / бренда (например, Ballu, Shuft, Ned, Systemair).</td>
+              </tr>
+              <tr>
+                <td><code>PROPERTY_CML2_ARTICLE</code></td>
+                <td><code>&lt;vendorCode&gt;</code></td>
+                <td>Заводской артикул из 1С; используется в отчётах контроля качества.</td>
+              </tr>
+              <tr>
+                <td>Свойства характеристик инфоблока</td>
+                <td><code>&lt;param name="..." unit="..."&gt;</code></td>
+                <td>Технические характеристики (мощность, расход воздуха, напряжение, уровень шума) с единицами измерения.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="panel-card">
+        <div class="panel-header">
+          <div>
+            <h2>Атомарная генерация и расписание запуска</h2>
+            <p class="panel-desc">Защита от чтения битого или частично записанного XML-файла роботами Яндекса.</p>
+          </div>
+        </div>
+        <div class="schedule-grid">
+          <div class="schedule-item">
+            <div class="schedule-title">Атомарная запись файла</div>
+            <p>Генерация выполняется во временный файл <code>yandex-tovary.xml.tmp</code> через <code>DOMDocument</code> (UTF-8 без BOM), проверяется валидность структуры, после чего выполняется атомарный <code>rename()</code> в целевой <code>yandex-tovary.xml</code>.</p>
+          </div>
+          <div class="schedule-item">
+            <div class="schedule-title">Триггер и резервный cron</div>
+            <p>Основной запуск: автоматически по событию завершения 1С-обмена (<code>OnSuccessCatalogImport1C</code>) + резервный cron ежедневно в <strong>04:15 МСК</strong>.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toastBox" class="toast-box" aria-live="polite"></div>
+</body>
+</html>
