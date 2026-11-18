@@ -360,6 +360,28 @@ pre {
   flex-wrap: wrap;
 }
 
+.toggle-price-req,
+.toggle-stock {
+  appearance: none;
+  padding: 6px 11px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: #FFFFFF;
+  color: var(--text);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.toggle-price-req:hover,
+.toggle-stock:hover {
+  background: #F1F5F9;
+  border-color: var(--primary);
+}
+
 /* XML Preview */
 .xml-preview {
   margin: 0;
